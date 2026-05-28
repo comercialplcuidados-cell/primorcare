@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Primorcare</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--g:#1a3a1a;--t:#1D9E75;--tl:rgba(29,158,117,.12);--a:#BA7517;--r:#A32D2D;--bg:#f4f4f1;--card:#fff;--bd:#e0dfd8;--bd2:#c4c3bb;--tx:#1a1a18;--t2:#666;--t3:#999;--rr:10px;--rl:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--tx)}
+.scr{display:none;height:100vh;flex-direction:column;overflow:hidden}
+.scr.on{display:flex}
+.top{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--bd);min-height:52px}
+.sc{flex:1;overflow-y:auto;padding:12px 16px 80px}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:var(--rr);font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--bd2);background:var(--card);color:var(--tx);font-family:inherit}
+.btn-p{background:var(--g);color:#fff;border-color:var(--g)}
+.btn-g{background:#25D366;color:#fff;border-color:#25D366}
+.btn-r{color:var(--r);border-color:rgba(163,45,45,.35)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-w{width:100%}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);padding:14px 16px;margin-bottom:10px}
+.ct{font-size:11px;font-weight:700;color:var(--t2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fw{grid-column:1/-1}
+.fg{display:flex;flex-direction:column;gap:5px}
+.lb{font-size:12px;font-weight:600;color:var(--t2)}
+input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--bd2);border-radius:var(--rr);background:#fff;color:var(--tx);font-size:14px;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--t)}
+textarea{resize:vertical;min-height:70px}
+.chk-wrap{display:flex;flex-wrap:wrap;gap:8px}
+.chk-wrap label{display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--bd2);border-radius:var(--rr);background:#fff;font-size:13px;cursor:pointer}
+.chk-wrap label input[type=checkbox]{width:20px;height:20px;accent-color:var(--t)}
+.chk-wrap label:has(input:checked){border-color:var(--t);background:var(--tl);font-weight:600;color:var(--g)}
+.nav{flex-shrink:0;display:flex;background:var(--card);border-top:1px solid var(--bd)}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;cursor:pointer;font-size:10px;font-weight:600;color:var(--t3);gap:3px;min-height:52px}
+.ni.on{color:var(--t)}
+.cp-msg{display:none;font-size:12px;color:var(--t);font-weight:700;padding:4px 0}
+@keyframes sp{to{transform:rotate(360deg)}}
+#loading{position:fixed;inset:0;background:var(--g);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
+#loading p{color:rgba(255,255,255,.7);font-size:13px;margin-top:12px}
+.spin{width:28px;height:28px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+
+.ref-item{border:1.5px solid var(--bd2);border-radius:var(--rr);padding:10px 6px;text-align:center;cursor:pointer}
+.ref-item.on{border-color:var(--t);background:var(--tl)}
+.ri-icon{font-size:20px;margin-bottom:2px}
+.ri-nm{font-size:11px;font-weight:700}
+.ri-mm{font-size:10px;color:var(--t3)}
+input[type=range]{-webkit-appearance:none;width:100%;height:8px;border-radius:4px;outline:none;border:none;padding:0;background:#e0dfd8}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;cursor:pointer;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.btn-t{background:var(--t);color:#fff;border-color:var(--t)}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <img id="load-logo" src="" alt="" style="height:38px;margin-bottom:16px;object-fit:contain">
+  <div class="spin"></div>
+  <p>Carregando...</p>
+</div>
+
+<div id="s-lista" class="scr">
+  <div class="top">
+    <img id="l-lista" alt="" style="height:26px;object-fit:contain">
+    <button class="btn btn-p btn-sm" onclick="novoPac()">+ Novo paciente</button>
+  </div>
+  <div class="sc">
+    <div style="background:#f0f0ec;border-radius:var(--rl);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+      <span style="color:#888">&#128269;</span>
+      <input type="text" id="pac-busca" placeholder="Buscar paciente..." oninput="renderPacs()" style="border:none;background:transparent;outline:none;font-size:14px;flex:1;padding:0">
+    </div>
+    <div id="lista-pacs"></div>
+  </div>
+</div>
+
+<div id="s-ficha" class="scr">
+  <div class="top">
+    <img id="l-ficha" alt="" style="height:26px;object-fit:contain">
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-r btn-sm" id="fp-del" style="display:none" onclick="excluirPac()">Excluir</button>
+      <button class="btn btn-sm" onclick="goHome()">Cancelar</button>
+    </div>
+  </div>
+  <div class="sc">
+    <div class="card"><div class="ct">Dados do paciente</div>
+      <div class="g2">
+        <div class="fg fw"><label class="lb">Nome *</label><input type="text" id="fp-nome" placeholder="Nome completo"></div>
+        <div class="fg"><label class="lb">Nascimento</label><input type="date" id="fp-nasc"></div>
+        <div class="fg"><label class="lb">WhatsApp</label><input type="text" id="fp-tel" placeholder="(00) 00000-0000"></div>
+        <div class="fg"><label class="lb">M&#233;dico</label><input type="text" id="fp-med" placeholder="Dr(a). Nome"></div>
+        <div class="fg"><label class="lb">Status</label>
+          <select id="fp-status">
+            <option value="ativo">Ativo</option>
+            <option value="alta">Alta</option>
+            <option value="pausado">Pausado</option>
+          </select>
+        </div>
+        <div class="fg fw"><label class="lb">Medica&#231;&#245;es</label><input type="text" id="fp-meds" placeholder="metformina..."></div>
+        <div class="fg fw"><label class="lb">Observa&#231;&#245;es</label><textarea id="fp-obs" style="min-height:44px"></textarea></div>
+      </div>
+    </div>
+    <div class="card"><div class="ct">Comorbidades</div><div id="fp-comor" class="chk-wrap"></div></div>
+    <div class="card"><div class="ct">Laborat&#243;rio</div>
+      <div class="g2">
+        <div class="fg"><label class="lb">HbA1c %</label><input type="number" id="fp-hba1c" step="0.1" placeholder="8.2"></div>
+        <div class="fg"><label class="lb">Albumina g/dL</label><input type="number" id="fp-alb" step="0.1" placeholder="3.5"></div>
+        <div class="fg"><label class="lb">ABI</label><input type="number" id="fp-abi" step="0.01" placeholder="0.85"></div>
+        <div class="fg"><label class="lb">IMC</label><input type="number" id="fp-imc" step="0.1" placeholder="28.4"></div>
+      </div>
+    </div>
+    <button class="btn btn-p btn-w" onclick="salvarPac()" style="margin-bottom:24px">Salvar paciente</button>
+  </div>
+</div>
+
+<div id="s-home" class="scr">
+  <div class="top">
+    <img id="l-home" alt="" style="height:26px;object-fit:contain">
+    <span style="font-size:12px;color:#888">Primorcare</span>
+  </div>
+  <div class="sc">
+    <div class="card" id="pac-card" style="cursor:pointer;margin-bottom:12px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <button class="btn btn-p btn-w" onclick="preencherHP();showScr('s-hp')">Health Plan</button>
+      <button class="btn btn-w" onclick="showScr('s-rel')">Relat&#243;rio</button>
+    </div>
+    <div class="card">
+      <div class="ct">Evolu&#231;&#227;o da ferida</div>
+      <div style="height:200px"><canvas id="mainChart"></canvas></div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="ni on" data-n="home" onclick="goHome();setNav('home')"><span>&#127968;</span><span>In&#237;cio</span></div>
+    <div class="ni" data-n="hp" onclick="preencherHP();showScr('s-hp');setNav('hp')"><span>&#128203;</span><span>Health Plan</span></div>
+    <div class="ni" data-n="rel" onclick="showScr('s-rel');setNav('rel')"><span>&#128196;</span><span>Relat&#243;rio</span></div>
+  </nav>
+</div>
+
+<div id="s-hp" class="scr">
+  <div class="top">
+    <button class="btn btn-sm" onclick="goHome()">&#8249; Voltar</button>
+    <span style="font-weight:700">Health Plan</span>
+    <button class="btn btn-p btn-sm" onclick="salvarHP()">Salvar</button>
+  </div>
+  <div class="sc">
+    <div class="card"><div class="ct">Paciente</div>
+      <div class="g2">
+        <div class="fg fw"><label class="lb">Nome</label><input type="text" id="hp-nome" readonly style="background:#f5f5f2"></div>
+        <div class="fg"><label class="lb">HbA1c %</label><input type="number" id="hp-hba1c" step="0.1"></div>
+        <div class="fg"><label class="lb">ABI</label><input type="number" id="hp-abi" step="0.01"></div>
+      </div>
+    </div>
+    <div class="card"><div class="ct">Comorbidades</div><div id="hp-comor" class="chk-wrap"></div></div>
+
+    <div class="card" style="border:2px solid rgba(29,158,117,.35)">
+      <div class="ct" style="color:var(--t)">Medição por câmera</div>
+      <div style="font-size:12px;color:#888;margin-bottom:10px">Selecione referência → Foto → Marque pontos → Área calculada automaticamente</div>
+      <div style="font-size:12px;font-weight:700;color:var(--g);margin-bottom:8px">1. Referência de escala</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px" id="hpcam-refs">
+        <div class="ref-item" data-mm="24.26" data-lbl="Moeda R$1" onclick="hpSelRef(this)"><div class="ri-icon">&#129700;</div><div class="ri-nm">Moeda R$1</div><div class="ri-mm">24,26mm</div></div>
+        <div class="ref-item" data-mm="27" data-lbl="Moeda R$0,50" onclick="hpSelRef(this)"><div class="ri-icon">&#129700;</div><div class="ri-nm">R$0,50</div><div class="ri-mm">27mm</div></div>
+        <div class="ref-item" data-mm="85.6" data-lbl="Cartão crédito" onclick="hpSelRef(this)"><div class="ri-icon">&#128179;</div><div class="ri-nm">Cartão</div><div class="ri-mm">85,6mm</div></div>
+        <div class="ref-item" data-mm="30" data-lbl="Moeda R$0,25" onclick="hpSelRef(this)"><div class="ri-icon">&#129700;</div><div class="ri-nm">R$0,25</div><div class="ri-mm">30mm</div></div>
+        <div class="ref-item" data-mm="150" data-lbl="Régua 15cm" onclick="hpSelRef(this)"><div class="ri-icon">&#128207;</div><div class="ri-nm">Régua</div><div class="ri-mm">150mm</div></div>
+        <div class="ref-item" data-mm="0" data-lbl="Personalizado" onclick="hpSelRef(this)"><div class="ri-icon">&#9998;</div><div class="ri-nm">Custom</div><div class="ri-mm">definir</div></div>
+      </div>
+      <div id="hpcam-ok" style="display:none;font-size:12px;color:var(--t);font-weight:600;padding:4px 0;margin-bottom:8px"></div>
+      <div id="hpcam-foto-btn" style="display:none">
+        <div style="font-size:12px;font-weight:700;color:var(--g);margin-bottom:8px">2. Foto da ferida</div>
+        <button class="btn btn-t btn-w" onclick="document.getElementById('hpcam-inp').click()">&#128247; Abrir câmera / galeria</button>
+        <input type="file" id="hpcam-inp" accept="image/*" style="display:none" onchange="hpCamLoad(this)">
+      </div>
+      <div id="hpcam-cv-wrap" style="display:none;margin-top:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--g);margin-bottom:8px">3. Marque os pontos</div>
+        <div style="display:flex;gap:5px;margin-bottom:8px">
+          <div id="hpcam-btn-ref" style="flex:1;padding:8px;border-radius:var(--rr);font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--bd2);background:#fff;color:var(--t2);text-align:center" onclick="hpCamMode('ref')">Referência</div>
+          <div id="hpcam-btn-comp" style="flex:1;padding:8px;border-radius:var(--rr);font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--bd2);background:#fff;color:var(--t2);text-align:center" onclick="hpCamMode('comp')">Comprimento</div>
+          <div id="hpcam-btn-larg" style="flex:1;padding:8px;border-radius:var(--rr);font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--bd2);background:#fff;color:var(--t2);text-align:center" onclick="hpCamMode('larg')">Largura</div>
+        </div>
+        <div style="position:relative;background:#111;border-radius:var(--rr);overflow:hidden;margin-bottom:8px">
+          <canvas id="hpcam-cv" style="width:100%;display:block;touch-action:none" onclick="hpCamClick(event)"></canvas>
+          <div id="hpcam-dica" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;font-size:11px;padding:4px 14px;border-radius:20px;white-space:nowrap;pointer-events:none">Marque os 2 extremos da referência</div>
+        </div>
+        <button class="btn btn-sm" onclick="hpCamReset()">Reiniciar</button>
+      </div>
+      <div id="hpcam-res" style="display:none;margin-top:10px"></div>
+      <div id="hpcam-ok2" style="display:none;margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Composição tecidual</div>
+      <div id="hpts-wrap"></div>
+      <div style="height:12px;border-radius:6px;overflow:hidden;display:flex;margin:10px 0" id="hpts-bar"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--bd)">
+        <div id="hpts-ring" style="width:46px;height:46px;border-radius:50%;border:2.5px solid var(--t);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--t)">--</div>
+        <div style="text-align:right"><div style="font-size:10px;color:var(--t3)">Total</div><div id="hpts-total" style="font-size:17px;font-weight:700;color:var(--t)">100%</div></div>
+      </div>
+    </div>
+    <div class="card"><div class="ct">Les&#227;o</div>
+      <div class="g2">
+        <div class="fg fw"><label class="lb">Localiza&#231;&#227;o</label><input type="text" id="hp-local" placeholder="Ex: Male&#769;olo MIE"></div>
+        <div class="fg"><label class="lb">Etiologia</label>
+          <select id="hp-etio">
+            <option value="">Selecione...</option>
+            <option value="venosa">&#218;lcera venosa</option>
+            <option value="arterial">&#218;lcera arterial</option>
+            <option value="diabetica">&#218;lcera diab&#233;tica</option>
+            <option value="pressao">&#218;lcera por press&#227;o</option>
+            <option value="cirurgica">Ferida cir&#250;rgica</option>
+            <option value="traumatica">Ferida traum&#225;tica</option>
+            <option value="mista">Etiologia mista</option>
+          </select>
+        </div>
+        <div class="fg"><label class="lb">Tempo</label>
+          <select id="hp-tempo">
+            <option value="">Selecione...</option>
+            <option value="aguda">Aguda (menos de 4 sem)</option>
+            <option value="subaguda">Subaguda (4-12 sem)</option>
+            <option value="cronica">Cr&#244;nica (mais de 12 sem)</option>
+            <option value="muito_cronica">Muito cr&#244;nica (mais 1 ano)</option>
+          </select>
+        </div>
+        <div class="fg"><label class="lb">Comprimento (mm)</label>
+          <input type="number" id="hp-comp" step="0.1" placeholder="0.0" oninput="atualizarArea()">
+        </div>
+        <div class="fg"><label class="lb">Largura (mm)</label>
+          <input type="number" id="hp-larg" step="0.1" placeholder="0.0" oninput="atualizarArea()">
+        </div>
+        <div class="fg"><label class="lb">&#193;rea (mm&#178;)</label>
+          <input type="text" id="hp-area-val" readonly style="background:#f5f5f2">
+        </div>
+        <div class="fg fw"><label class="lb">Cobertura prim&#225;ria</label><input type="text" id="hp-cobp" placeholder="Alginato, hidrogel..."></div>
+        <div class="fg fw"><label class="lb">Cobertura secund&#225;ria</label><input type="text" id="hp-cobs" placeholder="Espuma, atadura..."></div>
+        <div class="fg fw"><label class="lb">Orienta&#231;&#245;es</label><textarea id="hp-orient" style="min-height:44px"></textarea></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="s-rel" class="scr">
+  <div class="top">
+    <button class="btn btn-sm" onclick="goHome()">&#8249; Voltar</button>
+    <span style="font-weight:700">Relat&#243;rio</span>
+  </div>
+  <div class="sc">
+    <div class="card"><div class="ct">Prontu&#225;rio</div>
+      <button class="btn btn-p btn-w" onclick="gerarPront()" style="margin-bottom:10px">Gerar relat&#243;rio</button>
+      <div id="pront-res" style="display:none">
+        <pre id="pront-txt" style="white-space:pre-wrap;font-size:12px;font-family:inherit;margin:0 0 10px;background:#f5f5f2;padding:12px;border-radius:var(--rr)"></pre>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="copiarPront()">Copiar texto</button>
+          <button class="btn btn-g btn-sm" onclick="prontWpp()">&#128172; WhatsApp</button>
+          <span class="cp-msg" id="pront-cp">&#10003; Copiado!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var LOGO='data:image/jpeg;base64,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';
+
+var DB={pacientes:[],consultas:[],activePacId:null};
+var UI={woundId:null};
+var COMOR=[
+  {id:'dm2',l:'Diabetes tipo 2'},{id:'dm1',l:'Diabetes tipo 1'},
+  {id:'has',l:'HAS'},{id:'ivc',l:'Insuf. venosa'},
+  {id:'dai',l:'Doença arterial'},{id:'ob',l:'Obesidade'},
+  {id:'irc',l:'Insuf. renal'},{id:'des',l:'Desnutrição'},
+  {id:'imu',l:'Imunosupressão'},{id:'tab',l:'Tabagismo'},
+  {id:'ane',l:'Anemia'},{id:'hip',l:'Hipotireoidismo'}
+];
+
+function G(id){return document.getElementById(id);}
+function today(){return new Date().toISOString().split('T')[0];}
+function uid(){return Math.random().toString(36).substr(2,9);}
+function fmtD(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+
+function loadDB(){
+  try{var s=localStorage.getItem('pcApp');if(s){DB=JSON.parse(s);}}catch(e){}
+  if(!DB.pacientes)DB.pacientes=[];
+  if(!DB.consultas)DB.consultas=[];
+}
+function saveDB(){
+  try{localStorage.setItem('pcApp',JSON.stringify(DB));}catch(e){alert('Erro ao salvar dados: '+e.message);}
+}
+function showScr(id){
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on');});
+  var e=G(id);if(e)e.classList.add('on');
+}
+function setNav(n){
+  document.querySelectorAll('.ni').forEach(function(e){e.classList.remove('on');});
+  document.querySelectorAll('.ni[data-n="'+n+'"]').forEach(function(e){e.classList.add('on');});
+}
+function setLogos(){
+  ['l-home','l-lista','l-ficha','load-logo'].forEach(function(id){
+    var e=G(id);if(e){e.src=LOGO;e.style.height='30px';e.style.objectFit='contain';}
+  });
+}
+function getPac(id){return(DB.pacientes||[]).find(function(p){return p.id===id;});}
+function getActivePac(){return getPac(DB.activePacId);}
+function goHome(){renderHome();showScr('s-home');setNav('home');}
+
+function initComor(wrapId,prefix){
+  var w=G(wrapId);if(!w)return;
+  w.innerHTML='';
+  COMOR.forEach(function(c){
+    var lbl=document.createElement('label');
+    var inp=document.createElement('input');
+    inp.type='checkbox';inp.id=prefix+c.id;
+    lbl.appendChild(inp);
+    lbl.appendChild(document.createTextNode(c.l));
+    w.appendChild(lbl);
+  });
+}
+
+function renderPacs(){
+  var el=G('lista-pacs');if(!el)return;
+  var busca=(G('pac-busca')||{value:''}).value.toLowerCase();
+  var pacs=(DB.pacientes||[]).filter(function(p){return!busca||p.nome.toLowerCase().indexOf(busca)>=0;});
+  el.innerHTML='';
+  if(!pacs.length){
+    var d=document.createElement('div');
+    d.style.cssText='text-align:center;padding:40px;color:#888;line-height:1.7';
+    d.textContent='Nenhum paciente cadastrado. Toque em + Novo paciente para começar.';
+    el.appendChild(d);return;
+  }
+  pacs.forEach(function(p){
+    var card=document.createElement('div');
+    card.className='card';card.style.cssText='cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px';
+    var av=document.createElement('div');
+    av.style.cssText='width:42px;height:42px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0';
+    av.textContent=p.nome[0].toUpperCase();
+    var info=document.createElement('div');info.style.flex='1';
+    var nm=document.createElement('div');nm.style.fontWeight='700';nm.textContent=p.nome;
+    var sub=document.createElement('div');sub.style.cssText='font-size:12px;color:#888';
+    var age=p.nasc?Math.floor((new Date()-new Date(p.nasc))/31557600000)+'a':'';
+    sub.textContent=(age?age+' · ':'')+( p.status||'ativo');
+    var arr=document.createElement('span');arr.style.cssText='color:#888;font-size:20px';arr.textContent='›';
+    info.appendChild(nm);info.appendChild(sub);
+    card.appendChild(av);card.appendChild(info);card.appendChild(arr);
+    (function(pid){card.onclick=function(){selPac(pid);};})(p.id);
+    el.appendChild(card);
+  });
+}
+
+function selPac(id){DB.activePacId=id;UI.woundId=null;saveDB();renderHome();showScr('s-home');setNav('home');}
+
+function novoPac(){
+  DB.activePacId=null;
+  ['fp-nome','fp-nasc','fp-tel','fp-med','fp-meds','fp-obs','fp-hba1c','fp-alb','fp-abi','fp-imc'].forEach(function(id){var e=G(id);if(e)e.value='';});
+  var del=G('fp-del');if(del)del.style.display='none';
+  var fs=G('fp-status');if(fs)fs.value='ativo';
+  COMOR.forEach(function(c){var e=G('fpc-'+c.id);if(e)e.checked=false;});
+  showScr('s-ficha');
+}
+
+function editPac(){
+  var p=getActivePac();if(!p)return;
+  var f={nome:'fp-nome',nasc:'fp-nasc',tel:'fp-tel',med:'fp-med',meds:'fp-meds',obs:'fp-obs',hba1c:'fp-hba1c',alb:'fp-alb',abi:'fp-abi',imc:'fp-imc'};
+  Object.keys(f).forEach(function(k){var e=G(f[k]);if(e&&p[k])e.value=p[k];});
+  var fs=G('fp-status');if(fs)fs.value=p.status||'ativo';
+  var del=G('fp-del');if(del)del.style.display='block';
+  COMOR.forEach(function(c){var e=G('fpc-'+c.id);if(e)e.checked=p.comor?p.comor.indexOf(c.id)>=0:false;});
+  showScr('s-ficha');
+}
+
+function salvarPac(){
+  var nome=(G('fp-nome')||{value:''}).value.trim();
+  if(!nome){alert('Digite o nome do paciente.');return;}
+  var comor=COMOR.filter(function(c){var e=G('fpc-'+c.id);return e&&e.checked;}).map(function(c){return c.id;});
+  var p={id:DB.activePacId||uid(),nome:nome,
+    nasc:(G('fp-nasc')||{value:''}).value,tel:(G('fp-tel')||{value:''}).value,
+    med:(G('fp-med')||{value:''}).value,meds:(G('fp-meds')||{value:''}).value,
+    obs:(G('fp-obs')||{value:''}).value,
+    status:(G('fp-status')||{value:'ativo'}).value,
+    hba1c:(G('fp-hba1c')||{value:''}).value,alb:(G('fp-alb')||{value:''}).value,
+    abi:(G('fp-abi')||{value:''}).value,imc:(G('fp-imc')||{value:''}).value,
+    comor:comor,dataCad:today()};
+  var idx=DB.pacientes.findIndex(function(x){return x.id===p.id;});
+  if(idx>=0)DB.pacientes[idx]=p;else DB.pacientes.push(p);
+  DB.activePacId=p.id;saveDB();goHome();
+}
+
+function excluirPac(){
+  if(!confirm('Excluir este paciente e todos os dados?'))return;
+  var id=DB.activePacId;
+  DB.pacientes=DB.pacientes.filter(function(p){return p.id!==id;});
+  DB.consultas=DB.consultas.filter(function(c){return c.pacId!==id;});
+  DB.activePacId=null;saveDB();renderPacs();showScr('s-lista');
+}
+
+function renderHome(){
+  var p=getActivePac();
+  var card=G('pac-card');if(!card)return;
+  card.innerHTML='';
+  if(!p){
+    var d=document.createElement('div');
+    d.style.cssText='text-align:center;padding:10px;color:#888;cursor:pointer';
+    d.textContent='Selecionar paciente ›';
+    d.onclick=function(){renderPacs();showScr('s-lista');};
+    card.appendChild(d);
+  } else {
+    var age=p.nasc?Math.floor((new Date()-new Date(p.nasc))/31557600000)+'a':'';
+    var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:10px';
+    var av=document.createElement('div');
+    av.style.cssText='width:42px;height:42px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0';
+    av.textContent=p.nome[0].toUpperCase();
+    var info=document.createElement('div');info.style.flex='1';
+    var nm=document.createElement('div');nm.style.fontWeight='700';nm.textContent=p.nome;
+    var sub=document.createElement('div');sub.style.cssText='font-size:12px;color:var(--g)';
+    sub.textContent='Ativo'+(age?' · '+age:'');
+    var btns=document.createElement('div');btns.style.cssText='display:flex;gap:5px';
+    var be=document.createElement('button');be.className='btn btn-sm';be.textContent='Editar';
+    be.onclick=function(e){e.stopPropagation();editPac();};
+    var bt=document.createElement('button');bt.className='btn btn-sm';bt.textContent='Trocar';
+    bt.onclick=function(e){e.stopPropagation();renderPacs();showScr('s-lista');};
+    btns.appendChild(be);btns.appendChild(bt);
+    info.appendChild(nm);info.appendChild(sub);
+    row.appendChild(av);row.appendChild(info);row.appendChild(btns);
+    card.appendChild(row);
+    card.onclick=function(){editPac();};
+  }
+  renderChart();
+}
+
+function getCS(){
+  var pid=DB.activePacId;var wid=UI.woundId;
+  return(DB.consultas||[]).filter(function(c){return c.pacId===pid&&c.wid===wid;}).sort(function(a,b){return a.data.localeCompare(b.data);});
+}
+
+function renderChart(){
+  var cv=G('mainChart');if(!cv)return;
+  if(window._ch){window._ch.destroy();window._ch=null;}
+  var cs=getCS();if(!cs.length)return;
+  window._ch=new Chart(cv,{type:'line',data:{
+    labels:cs.map(function(c){return fmtD(c.data)+(c.hp?' (HP)':'');}),
+    datasets:[{label:'Área (mm²)',data:cs.map(function(c){return c.area;}),
+      borderColor:'#1a3a1a',backgroundColor:'rgba(29,158,117,.1)',borderWidth:2.5,pointRadius:4,tension:0.3,fill:true}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{y:{ticks:{callback:function(v){return v+' mm²';}}}}}});
+}
+
+function atualizarArea(){
+  var c=parseFloat((G('hp-comp')||{value:0}).value)||0;
+  var l=parseFloat((G('hp-larg')||{value:0}).value)||0;
+  var av=G('hp-area-val');if(av&&c&&l)av.value=(c*l).toFixed(1)+' mm²';
+}
+
+function preencherHP(){
+  var p=getActivePac();if(!p)return;
+  var e=G('hp-nome');if(e)e.value=p.nome;
+  ['hba1c','alb','abi','imc'].forEach(function(k){var e=G('hp-'+k);if(e&&p[k])e.value=p[k];});
+  COMOR.forEach(function(c){var e=G('hc-'+c.id);if(e)e.checked=p.comor?p.comor.indexOf(c.id)>=0:false;});
+  var hpSalvo=(DB.consultas||[]).filter(function(x){return x.pacId===DB.activePacId;}).find(function(x){return x.hp;});
+  if(hpSalvo&&hpSalvo.hp){
+    var h=hpSalvo.hp;
+    if(!UI.woundId)UI.woundId=hpSalvo.wid;
+    ['etio','tempo','local','cobp','cobs','orient'].forEach(function(k){var e=G('hp-'+k);if(e&&h[k])e.value=h[k];});
+    if(h.comp){var ec=G('hp-comp');if(ec)ec.value=h.comp;}
+    if(h.larg){var el=G('hp-larg');if(el)el.value=h.larg;}
+    if(h.comp&&h.larg){var av=G('hp-area-val');if(av)av.value=(h.comp*h.larg).toFixed(1)+' mm²';}
+    ['hba1c','alb','abi','imc'].forEach(function(k){var e=G('hp-'+k);if(e&&h[k])e.value=h[k];});
+    if(h.comors)COMOR.forEach(function(c){var e=G('hc-'+c.id);if(e)e.checked=h.comors.indexOf(c.id)>=0;});
+  }
+}
+
+function salvarHP(){
+  if(!UI.woundId)UI.woundId='w'+uid();
+  var comp=parseFloat((G('hp-comp')||{value:'0'}).value)||0;
+  var larg=parseFloat((G('hp-larg')||{value:'0'}).value)||0;
+  var local=(G('hp-local')||{value:'Ferida'}).value||'Ferida';
+  var comors=COMOR.filter(function(c){var e=G('hc-'+c.id);return e&&e.checked;}).map(function(c){return c.id;});
+  var hpData={etio:(G('hp-etio')||{value:''}).value,tempo:(G('hp-tempo')||{value:''}).value,
+    local:local,cobp:(G('hp-cobp')||{value:''}).value,cobs:(G('hp-cobs')||{value:''}).value,
+    orient:(G('hp-orient')||{value:''}).value,comp:comp,larg:larg,
+    hba1c:(G('hp-hba1c')||{value:''}).value,abi:(G('hp-abi')||{value:''}).value,comors:comors};
+  var todasCs=(DB.consultas||[]).filter(function(x){return x.pacId===DB.activePacId;});
+  var hpCons=todasCs.find(function(x){return x.hp;});
+  var obj={id:hpCons?hpCons.id:uid(),pacId:DB.activePacId,wid:UI.woundId,wlabel:local,
+    data:today(),comp:comp,larg:larg,prof:0,area:parseFloat((comp*larg).toFixed(2)),
+    hp:hpData,aspecto:'',evol:'Health Plan',timeA:{},tissue:null,insumos:[],fotos:[]};
+  if(hpCons){var i=DB.consultas.findIndex(function(x){return x.id===hpCons.id;});if(i>=0)DB.consultas[i]=obj;else DB.consultas.push(obj);}
+  else DB.consultas.push(obj);
+  saveDB();alert('Health Plan salvo!');goHome();
+}
+
+function gerarPront(){
+  var p=getActivePac();if(!p){alert('Selecione um paciente.');return;}
+  var todas=(DB.consultas||[]).filter(function(x){return x.pacId===DB.activePacId;}).sort(function(a,b){return a.data.localeCompare(b.data);});
+  var hpC=todas.find(function(x){return x.hp;});
+  var hp=hpC&&hpC.hp?hpC.hp:null;
+  var L=['RELATÓRIO CLÍNICO - ESTOMATERAPIA','Data: '+fmtD(today()),'Paciente: '+p.nome,''];
+  if(hp){
+    L.push('LESÃO: '+(hp.local||''));
+    if(hp.etio)L.push('Etiologia: '+hp.etio);
+    if(hp.tempo)L.push('Tempo: '+hp.tempo);
+    if(hp.comp&&hp.larg)L.push('Medidas: '+hp.comp+' x '+hp.larg+' mm | Área: '+(hp.comp*hp.larg).toFixed(0)+' mm²');
+    if(hp.cobp)L.push('Cobertura primária: '+hp.cobp);
+    if(hp.cobs)L.push('Cobertura secundária: '+hp.cobs);
+    if(hp.orient)L.push('Orientações: '+hp.orient);
+  }
+  L.push('');L.push('Primorcare - Excelência em Cuidado');
+  var txt=G('pront-txt');if(txt)txt.textContent=L.join('\n');
+  var res=G('pront-res');if(res)res.style.display='block';
+}
+
+function copiarPront(){
+  var el=G('pront-txt');if(!el)return;
+  try{navigator.clipboard.writeText(el.textContent);}catch(e){}
+  var cp=G('pront-cp');if(cp){cp.style.display='inline';setTimeout(function(){cp.style.display='none';},2000);}
+}
+
+function prontWpp(){
+  var el=G('pront-txt');if(!el||!el.textContent)return;
+  window.open('https://wa.me/?text='+encodeURIComponent(el.textContent),'_blank');
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  loadDB();
+  setLogos();
+  initComor('fp-comor','fpc-');
+  initComor('hp-comor','hc-');
+  if(typeof initHPTS==='function')initHPTS();
+  if(DB.activePacId&&getPac(DB.activePacId)){
+    renderHome();showScr('s-home');setNav('home');
+  } else {
+    renderPacs();showScr('s-lista');
+  }
+  var ld=G('loading');
+  if(ld){setTimeout(function(){ld.style.opacity='0';setTimeout(function(){ld.style.display='none';},400);},300);}
+});
+// ===== CÂMERA HP =====
+var HPCAM={img:null,b64:null,refMM:0,refLbl:'',mode:'ref',scale:null,
+  pts:{ref:[],comp:[],larg:[]},res:{comp:null,larg:null},ctx:null,nw:0,nh:0};
+
+function hpSelRef(el){
+  var mm=parseFloat(el.getAttribute('data-mm'))||0;
+  var lbl=el.getAttribute('data-lbl')||'';
+  if(mm===0){var v=prompt('Medida em mm:');if(!v)return;mm=parseFloat(v)||0;lbl='Custom '+mm+'mm';}
+  document.querySelectorAll('#hpcam-refs .ref-item').forEach(function(r){r.classList.remove('on');});
+  el.classList.add('on');
+  HPCAM.refMM=mm; HPCAM.refLbl=lbl;
+  var ok=document.getElementById('hpcam-ok');
+  if(ok){ok.textContent='Referência: '+lbl+' ('+mm+' mm)';ok.style.display='block';}
+  var fb=document.getElementById('hpcam-foto-btn');
+  if(fb)fb.style.display='block';
+}
+
+function hpCamLoad(input){
+  var f=input.files[0];if(!f)return;
+  if(!HPCAM.refMM){alert('Selecione uma referência primeiro.');input.value='';return;}
+  var r=new FileReader();
+  r.onload=function(ev){
+    var img=new Image();
+    img.onload=function(){
+      var MAX=800,w=img.naturalWidth,h=img.naturalHeight;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      var tmp=document.createElement('canvas');
+      tmp.width=w;tmp.height=h;
+      tmp.getContext('2d').drawImage(img,0,0,w,h);
+      var src=tmp.toDataURL('image/jpeg',0.75);
+      HPCAM.b64=src;  // guardar data URL completo
+      HPCAM.img=new Image();
+      HPCAM.img.onload=function(){
+        HPCAM.nw=HPCAM.img.naturalWidth;
+        HPCAM.nh=HPCAM.img.naturalHeight;
+        var cv=document.getElementById('hpcam-cv');if(!cv)return;
+        cv.width=HPCAM.nw;cv.height=HPCAM.nh;
+        HPCAM.ctx=cv.getContext('2d');
+        HPCAM.ctx.drawImage(HPCAM.img,0,0);
+        HPCAM.mode='ref';
+        HPCAM.pts={ref:[],comp:[],larg:[]};
+        HPCAM.scale=null;HPCAM.res={comp:null,larg:null};
+        var wrap=document.getElementById('hpcam-cv-wrap');if(wrap)wrap.style.display='block';
+        var btn=document.getElementById('hpcam-foto-btn');if(btn)btn.style.display='none';
+        hpCamMode('ref');
+      };
+      HPCAM.img.src=src;
+    };
+    img.src=ev.target.result;
+  };
+  r.readAsDataURL(f);input.value='';
+}
+
+function hpCamMode(mode){
+  HPCAM.mode=mode;
+  ['ref','comp','larg'].forEach(function(m){
+    var b=document.getElementById('hpcam-btn-'+m);if(!b)return;
+    if(m===mode){b.style.background='var(--t)';b.style.color='#fff';b.style.borderColor='var(--t)';}
+    else{b.style.background='#fff';b.style.color='var(--t2)';b.style.borderColor='var(--bd2)';}
+  });
+  var msgs={ref:'Toque nos 2 extremos: '+HPCAM.refLbl,comp:'Toque nos 2 pontos de comprimento máximo',larg:'Toque nos 2 pontos de largura máxima'};
+  var d=document.getElementById('hpcam-dica');if(d)d.textContent=msgs[mode]||'';
+}
+
+function hpCamClick(ev){
+  var cv=document.getElementById('hpcam-cv');if(!cv||!HPCAM.img)return;
+  var rect=cv.getBoundingClientRect();
+  var x=(ev.clientX-rect.left)*(HPCAM.nw/rect.width);
+  var y=(ev.clientY-rect.top)*(HPCAM.nh/rect.height);
+  var arr=HPCAM.pts[HPCAM.mode];if(arr.length>=2)return;
+  arr.push({x:x,y:y});hpCamDraw();
+  if(HPCAM.mode==='ref'&&arr.length===2){
+    var dx=arr[1].x-arr[0].x,dy=arr[1].y-arr[0].y;
+    HPCAM.scale=Math.sqrt(dx*dx+dy*dy)/HPCAM.refMM;
+    hpCamMode('comp');
+  } else if(HPCAM.mode==='comp'&&arr.length===2){
+    var dx2=arr[1].x-arr[0].x,dy2=arr[1].y-arr[0].y;
+    HPCAM.res.comp=parseFloat((Math.sqrt(dx2*dx2+dy2*dy2)/HPCAM.scale).toFixed(1));
+    hpCamMode('larg');
+  } else if(HPCAM.mode==='larg'&&arr.length===2){
+    var dx3=arr[1].x-arr[0].x,dy3=arr[1].y-arr[0].y;
+    HPCAM.res.larg=parseFloat((Math.sqrt(dx3*dx3+dy3*dy3)/HPCAM.scale).toFixed(1));
+    hpCamResultado();
+  }
+}
+
+function hpCamDraw(){
+  if(!HPCAM.ctx||!HPCAM.img)return;
+  HPCAM.ctx.drawImage(HPCAM.img,0,0);
+  var CORS={ref:'#378ADD',comp:'#1D9E75',larg:'#BA7517'};
+  var NOMES={ref:HPCAM.refLbl,comp:'Comprimento',larg:'Largura'};
+  ['ref','comp','larg'].forEach(function(k){
+    var arr=HPCAM.pts[k];if(!arr.length)return;
+    var cor=CORS[k];var rr=Math.max(7,HPCAM.nw/100);
+    HPCAM.ctx.fillStyle=cor;
+    arr.forEach(function(p){HPCAM.ctx.beginPath();HPCAM.ctx.arc(p.x,p.y,rr,0,Math.PI*2);HPCAM.ctx.fill();});
+    if(arr.length===2){
+      HPCAM.ctx.strokeStyle=cor;HPCAM.ctx.lineWidth=Math.max(2,HPCAM.nw/300);
+      HPCAM.ctx.setLineDash([10,5]);
+      HPCAM.ctx.beginPath();HPCAM.ctx.moveTo(arr[0].x,arr[0].y);HPCAM.ctx.lineTo(arr[1].x,arr[1].y);HPCAM.ctx.stroke();
+      HPCAM.ctx.setLineDash([]);
+      var mx=(arr[0].x+arr[1].x)/2,my=(arr[0].y+arr[1].y)/2;
+      var fs=Math.max(20,HPCAM.nw/40);
+      HPCAM.ctx.font='bold '+fs+'px sans-serif';
+      var txt=NOMES[k];
+      if(k!=='ref'&&HPCAM.scale){var ddx=arr[1].x-arr[0].x,ddy=arr[1].y-arr[0].y;txt+=': '+(Math.sqrt(ddx*ddx+ddy*ddy)/HPCAM.scale).toFixed(1)+' mm';}
+      var tw=HPCAM.ctx.measureText(txt).width;
+      HPCAM.ctx.fillStyle='rgba(0,0,0,.75)';HPCAM.ctx.fillRect(mx-tw/2-8,my-fs-6,tw+16,fs+14);
+      HPCAM.ctx.fillStyle='#fff';HPCAM.ctx.textAlign='center';HPCAM.ctx.textBaseline='bottom';
+      HPCAM.ctx.fillText(txt,mx,my+6);
+    }
+  });
+}
+
+function hpCamResultado(){
+  var comp=HPCAM.res.comp,larg=HPCAM.res.larg;
+  var el=document.getElementById('hpcam-res');if(!el)return;
+  el.style.display='block';
+  el.innerHTML='<div style="background:var(--tl);border:1.5px solid rgba(29,158,117,.4);border-radius:var(--rl);padding:14px">'
+    +'<div style="font-weight:700;color:var(--t);margin-bottom:12px">Medição calculada</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;margin-bottom:14px">'
+    +'<div style="background:#fff;border-radius:var(--rr);padding:10px"><div style="font-size:24px;font-weight:700;color:var(--t)">'+(comp||'--')+'</div><div style="font-size:10px;color:var(--t3)">Comp (mm)</div></div>'
+    +'<div style="background:#fff;border-radius:var(--rr);padding:10px"><div style="font-size:24px;font-weight:700;color:var(--t)">'+(larg||'--')+'</div><div style="font-size:10px;color:var(--t3)">Larg (mm)</div></div>'
+    +'<div style="background:#fff;border-radius:var(--rr);padding:10px"><div style="font-size:24px;font-weight:700;color:var(--t)">'+(comp&&larg?(comp*larg).toFixed(0):'--')+'</div><div style="font-size:10px;color:var(--t3)">Área (mm²)</div></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn btn-t" style="flex:1" onclick="hpCamAplicar()">Usar estas medidas</button>'
+    +'<button class="btn btn-sm" onclick="hpCamReset()">Refazer</button>'
+    +'</div></div>';
+}
+
+function hpCamAplicar(){
+  var comp=HPCAM.res.comp,larg=HPCAM.res.larg;if(!comp||!larg)return;
+  var ec=document.getElementById('hp-comp');if(ec)ec.value=comp;
+  var el=document.getElementById('hp-larg');if(el)el.value=larg;
+  var av=document.getElementById('hp-area-val');if(av)av.value=(comp*larg).toFixed(1)+' mm\u00b2';
+  calcHP();
+  var res=document.getElementById('hpcam-res');if(res)res.style.display='none';
+  var wrap=document.getElementById('hpcam-cv-wrap');if(wrap)wrap.style.display='none';
+  var ok2=document.getElementById('hpcam-ok2');
+  if(ok2){
+    ok2.style.display='block';
+    var fotoHTML=HPCAM.b64?'<img src="'+HPCAM.b64+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--bd);flex-shrink:0">':'';
+    ok2.innerHTML='<div style="background:var(--tl);border:1.5px solid rgba(29,158,117,.4);border-radius:var(--rr);padding:12px;display:flex;align-items:center;gap:10px">'
+      +fotoHTML
+      +'<div style="flex:1"><div style="font-weight:700;color:var(--t)">Foto e medidas registradas</div>'
+      +'<div style="font-size:12px;color:var(--t2);margin-top:2px">'+comp+' x '+larg+' mm | Area: '+(comp*larg).toFixed(0)+' mm2</div>'
+      +'<div style="font-size:11px;color:var(--t3);margin-top:1px">Ref: '+HPCAM.refLbl+'</div></div>'
+      +'<button class="btn btn-sm" onclick="hpCamReset()">Refazer</button></div>';
+  }
+}
+
+function hpCamReset(){
+  HPCAM={img:null,b64:null,refMM:0,refLbl:'',mode:'ref',scale:null,
+    pts:{ref:[],comp:[],larg:[]},res:{comp:null,larg:null},ctx:null,nw:0,nh:0};
+  ['hpcam-cv-wrap','hpcam-res','hpcam-ok2','hpcam-foto-btn','hpcam-ok'].forEach(function(id){
+    var e=document.getElementById(id);if(e)e.style.display='none';
+  });
+  document.querySelectorAll('#hpcam-refs .ref-item').forEach(function(r){r.classList.remove('on');});
+}
+
+// ===== SLIDERS TECIDO HP =====
+var TISSUES=[
+  {id:'gran',l:'Granulacao',cor:'#E63946'},
+  {id:'epit',l:'Epitelizacao',cor:'#F4A7B9'},
+  {id:'fibr',l:'Fibrina/esfacelo',cor:'#F5C578'},
+  {id:'necr',l:'Necrose',cor:'#5C3D2E'}
+];
+var HPTS={gran:40,epit:10,fibr:30,necr:20};
+
+function initHPTS(){
+  var el=document.getElementById('hpts-wrap');if(!el)return;
+  var html='';
+  TISSUES.forEach(function(t){
+    var v=HPTS[t.id]||0;
+    html+='<div style="margin-bottom:14px">';
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">';
+    html+='<div style="width:12px;height:12px;border-radius:3px;flex-shrink:0;background:'+t.cor+'"></div>';
+    html+='<span style="font-size:13px;font-weight:600;flex:1">'+t.l+'</span>';
+    html+='<span id="hpts-v-'+t.id+'" style="font-size:15px;font-weight:700;min-width:40px;text-align:right;color:'+t.cor+'">'+v+'%</span>';
+    html+='</div>';
+    html+='<input type="range" min="0" max="100" value="'+v+'" data-tid="'+t.id+'"';
+    html+=' style="width:100%;height:8px;border-radius:4px;outline:none;border:none;padding:0;background:#e0dfd8;accent-color:'+t.cor+';-webkit-appearance:none"';
+    html+=' id="hpts-sl-'+t.id+'" oninput="hptsChg(this)" onchange="hptsChg(this)">';
+    html+='</div>';
+  });
+  el.innerHTML=html;
+  hptsCalc();
+}
+
+function hptsChg(el){
+  var id=el.getAttribute('data-tid');
+  var val=parseInt(el.value)||0;
+  HPTS[id]=val;
+  var vEl=document.getElementById('hpts-v-'+id);if(vEl)vEl.textContent=val+'%';
+  hptsCalc();
+}
+
+function hptsCalc(){
+  var total=TISSUES.reduce(function(s,t){return s+(HPTS[t.id]||0);},0);
+  var te=document.getElementById('hpts-total');
+  if(te){te.textContent=total+'%';te.style.color=total===100?'var(--t)':total>100?'var(--r)':'var(--a)';}
+  var bar=document.getElementById('hpts-bar');
+  if(bar&&total>0){
+    bar.innerHTML=TISSUES.map(function(t){
+      var pct=Math.round((HPTS[t.id]||0)/total*100);
+      return pct>0?'<div style="width:'+pct+'%;background:'+t.cor+'"></div>':'';
+    }).join('');
+  }
+  var g=HPTS.gran||0,ep=HPTS.epit||0,fi=HPTS.fibr||0,ne=HPTS.necr||0;
+  var sc=total>0?Math.round(((g*1.0)+(ep*1.2)-(fi*0.5)-(ne*0.8))/total*10):0;
+  sc=Math.min(Math.max(sc,0),10);
+  var cor=sc>=7?'var(--t)':sc>=4?'var(--a)':'var(--r)';
+  var ring=document.getElementById('hpts-ring');if(ring){ring.textContent=sc+'/10';ring.style.borderColor=cor;ring.style.color=cor;}
+  var fase=ne>30?'Inflamatoria':fi>40?'Inflamatoria/Proliferativa':g>50&&ep<10?'Proliferativa':ep>20?'Remodelacao':'Proliferativa';
+  var sf=document.getElementById('hpts-fase');if(sf)sf.textContent=fase;
+}
+
+function hptsNorm(){
+  var total=TISSUES.reduce(function(s,t){return s+(HPTS[t.id]||0);},0);
+  if(!total)return null;
+  var n={};var acc=0;
+  TISSUES.forEach(function(t,i){
+    if(i<TISSUES.length-1){n[t.id]=Math.round((HPTS[t.id]||0)/total*100);acc+=n[t.id];}
+    else{n[t.id]=100-acc;}
+  });
+  return n;
+}
+
+</script>
+</body>
+</html>
